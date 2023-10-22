@@ -1,13 +1,16 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"os"
-	"path/filepath"
+	"path"
+	"strings"
+
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/storage/memory"
 
 	"github.com/urfave/cli/v2"
 )
@@ -18,33 +21,44 @@ func main() {
 		Usage: "grab folder/file from git",
 		Action: func(ctx *cli.Context) error {
 			fmt.Println("Gitgrab", ctx.Args().Get(0))
-			repoURL := "https://api.github.com/repos/sachinsmc/rest-api-go-sample/tree/master/config"
-			token := "YOUR_GITHUB_ACCESS_TOKEN"
-			resp, err := sendRequest(repoURL, token)
+
+			repoURL := "https://github.com/sachinsmc/rest-api-go-sample.git"
+			subdirectoryPath := "models"
+			downloadDir := "/Users/sachin/Github/test-npm-pkg/temp"
+
+			// Create a new memory storage.
+			storage := memory.NewStorage()
+
+			// Clone the entire repository.
+			repo, err := git.Clone(storage, nil, &git.CloneOptions{
+				URL:           repoURL,
+				SingleBranch:  true,
+				ReferenceName: plumbing.ReferenceName("refs/heads/master"),
+				Depth:         1, // Shallow clone with depth 1.
+			})
+
 			if err != nil {
-				fmt.Println("Error:", err)
-				return nil
+				fmt.Printf("Error cloning the repository: %v\n", err)
+				os.Exit(1)
 			}
-			defer resp.Body.Close()
 
-			files, err := parseResponse(resp.Body)
-
+			// Check out only the specific subdirectory.
+			tree, err := getSubdirectory(repo, subdirectoryPath)
 			if err != nil {
-				fmt.Println("Error:", err)
-				return nil
+				fmt.Printf("Error retrieving the subdirectory: %v\n", err)
+				os.Exit(1)
 			}
 
-			for _, file := range files {
-				downloadURL := file["download_url"].(string)
-				filename := filepath.Base(downloadURL)
-
-				err := downloadFile(downloadURL, filename)
-				if err != nil {
-					fmt.Println("Error downloading", filename, ":", err)
-				} else {
-					fmt.Println("Downloaded", filename)
-				}
+			// Print the contents of the subdirectory.
+			for _, entry := range tree.Entries {
+				fmt.Println(entry.Name)
 			}
+			CheckIfError(err)
+
+			saveFiles(repo, tree, downloadDir)
+
+			// Now, you have the "models" directory cloned in memory. You can access its contents as needed.
+
 			return nil
 		},
 	}
@@ -54,44 +68,85 @@ func main() {
 	}
 }
 
-func sendRequest(url, token string) (*http.Response, error) {
-	req, err := http.NewRequest("GET", url, nil)
+func CheckIfError(err error) {
+	if err == nil {
+		return
+	}
+
+	fmt.Printf("\x1b[31;1m%s\x1b[0m\n", fmt.Sprintf("error: %s", err))
+	os.Exit(1)
+}
+
+func getSubdirectory(repo *git.Repository, subdirectoryPath string) (*object.Tree, error) {
+	// Get the HEAD reference.
+	ref, err := repo.Head()
 	if err != nil {
 		return nil, err
 	}
 
-	// Set the Authorization header with the GitHub token
-	req.Header.Set("Authorization", "token "+token)
-
-	client := &http.Client{}
-	return client.Do(req)
-}
-
-func parseResponse(body io.Reader) ([]map[string]interface{}, error) {
-	var files []map[string]interface{}
-
-	decoder := json.NewDecoder(body)
-	err := decoder.Decode(&files)
+	// Get the commit from the reference.
+	commit, err := repo.CommitObject(ref.Hash())
 	if err != nil {
 		return nil, err
 	}
 
-	return files, nil
+	// Get the tree object for the commit.
+	tree, err := commit.Tree()
+	if err != nil {
+		return nil, err
+	}
+
+	// Traverse the tree to the specified subdirectory.
+	for _, segment := range splitPath(subdirectoryPath) {
+		entry, err := tree.FindEntry(segment)
+		if err != nil {
+			return nil, err
+		}
+
+		if !entry.Mode.IsFile() {
+			tree, err = repo.TreeObject(entry.Hash)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	return tree, nil
 }
 
-func downloadFile(url, filename string) error {
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
+func splitPath(path string) []string {
+	return strings.Split(path, "/")
+}
 
-	file, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
+func saveFiles(repo *git.Repository, tree *object.Tree, downloadDir string) {
+	for _, entry := range tree.Entries {
+		if !entry.Mode.IsFile() {
+			continue
+		}
 
-	_, err = io.Copy(file, resp.Body)
-	return err
+		file, err := repo.BlobObject(entry.Hash)
+		if err != nil {
+			fmt.Printf("Error retrieving file: %v\n", err)
+			continue
+		}
+
+		fileContents, err := file.Contents()
+		if err != nil {
+			fmt.Printf("Error reading file contents: %v\n", err)
+			continue
+		}
+
+		filePath := fmt.Sprintf("%s/%s", downloadDir, entry.Name)
+
+		err = os.MkdirAll(path.Dir(filePath), os.ModePerm)
+		if err != nil {
+			fmt.Printf("Error creating directories: %v\n", err)
+			continue
+		}
+
+		err = os.WriteFile(filePath, []byte(fileContents), 0644)
+		if err != nil {
+			fmt.Printf("Error saving file: %v\n", err)
+		}
+	}
 }
