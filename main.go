@@ -17,13 +17,12 @@ func main() {
 		Name:  "gitgrab",
 		Usage: "grab folder/file from git",
 		Action: func(ctx *cli.Context) error {
-			fmt.Println("Gitgrab", ctx.Args().Get(0))
+			fmt.Println("Gitgrab : ", ctx.Args().Get(0))
 
 			URL := ctx.Args().Get(0)
 			// URL := "https://github.com/sachinsmc/rest-api-go-sample/tree/master/models"
 
 			repoURL, subdirectoryPath, refName := splitURL(URL)
-			fmt.Println(repoURL, subdirectoryPath, refName)
 			savePath := "./" + subdirectoryPath
 
 			storage := memory.NewStorage()
@@ -34,7 +33,6 @@ func main() {
 				ReferenceName: plumbing.ReferenceName(refName),
 				Depth:         1, // Shallow clone with depth 1.
 			})
-			fmt.Println("cloning")
 
 			CheckIfError(err)
 
@@ -55,7 +53,7 @@ func main() {
 			err = SaveTree(subTree, savePath)
 			CheckIfError(err)
 
-			fmt.Println("Subdirectory saved")
+			fmt.Println("Subdirectory saved : ", savePath)
 			return nil
 		},
 	}

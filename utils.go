@@ -67,12 +67,9 @@ func CheckIfError(err error) {
 
 func splitURL(URL string) (string, string, string) {
 	parts := strings.Split(URL, "/")
-	fmt.Println(parts)
 
-	// Base repository URL is the first four parts
 	repoURL := strings.Join(parts[:5], "/")
 
-	// Path is everything after "tree/master/"
 	subdirectoryPath := strings.Join(parts[7:], "/")
 	ref := parts[6]
 
