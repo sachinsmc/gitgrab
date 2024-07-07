@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -64,27 +63,4 @@ func main() {
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
-}
-
-func CheckIfError(err error) {
-	if err == nil {
-		return
-	}
-
-	fmt.Printf("\x1b[31;1m%s\x1b[0m\n", fmt.Sprintf("error: %s", err))
-	os.Exit(1)
-}
-
-func splitURL(URL string) (string, string, string) {
-	parts := strings.Split(URL, "/")
-	fmt.Println(parts)
-
-	// Base repository URL is the first four parts
-	repoURL := strings.Join(parts[:5], "/")
-
-	// Path is everything after "tree/master/"
-	subdirectoryPath := strings.Join(parts[7:], "/")
-	ref := parts[6]
-
-	return repoURL, subdirectoryPath, ref
 }
