@@ -2,7 +2,7 @@
 
 [![Go Reference][goreference_badge]][goreference_link]
 [![Go Report Card][goreportcard_badge]][goreportcard_link]
-
+[![goreleaser][goreleaser_badge]][goreleaser_link]
 
 ## Installation
 
@@ -35,4 +35,6 @@ See [`LICENSE`](./LICENSE).
 [goreference_link]: https://pkg.go.dev/github.com/sachinsmc/gitgrab
 [goreportcard_badge]: https://goreportcard.com/badge/github.com/sachinsmc/gitgrab
 [goreportcard_link]: https://goreportcard.com/report/github.com/sachinsmc/gitgrab
+[goreleaser_badge]: https://github.com/sachinsmc/gitgrab/actions/workflows/release.yml/badge.svg
+[goreleaser_link]: https://github.com/sachinsmc/gitgrab/actions/workflows/release.yml
 
