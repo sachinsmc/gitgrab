@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/go-git/go-git/v5/plumbing/filemode"
@@ -18,39 +19,25 @@ func SaveTree(tree *object.Tree, savePath string) error {
 		switch entry.Mode {
 		case filemode.Dir:
 			err := os.MkdirAll(path, os.ModePerm)
-			if err != nil {
-				return err
-			}
+			CheckIfError(err)
 			subTree, err := tree.Tree(entry.Name)
-			if err != nil {
-				return err
-			}
+			CheckIfError(err)
 			err = SaveTree(subTree, path)
-			if err != nil {
-				return err
-			}
+			CheckIfError(err)
 		case filemode.Regular, filemode.Executable:
 			fileRaw, err := tree.File(entry.Name)
-			if err != nil {
-				return err
-			}
+			CheckIfError(err)
 
 			reader, err := fileRaw.Reader()
-			if err != nil {
-				return err
-			}
+			CheckIfError(err)
 			defer reader.Close()
 
 			file, err := os.Create(path)
-			if err != nil {
-				return err
-			}
+			CheckIfError(err)
 			defer file.Close()
 
 			_, err = io.Copy(file, reader)
-			if err != nil {
-				return err
-			}
+			CheckIfError(err)
 		}
 	}
 	return nil
@@ -60,8 +47,9 @@ func CheckIfError(err error) {
 	if err == nil {
 		return
 	}
+	_, filename, line, _ := runtime.Caller(1)
 
-	fmt.Printf("\x1b[31;1m%s\x1b[0m\n", fmt.Sprintf("error: %s", err))
+	fmt.Printf("\x1b[31;1m%s\x1b[0m\n", fmt.Sprintf("[error] %s:%d %v", filename, line, err))
 	os.Exit(1)
 }
 

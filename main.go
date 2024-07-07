@@ -20,7 +20,7 @@ func main() {
 			fmt.Println("Gitgrab : ", ctx.Args().Get(0))
 
 			URL := ctx.Args().Get(0)
-			// URL := "https://github.com/sachinsmc/rest-api-go-sample/tree/master/models"
+			// URL := "https://github.com/go-git/go-git/blob/master/config/modules.go"
 
 			repoURL, subdirectoryPath, refName := splitURL(URL)
 			savePath := "./" + subdirectoryPath
@@ -48,7 +48,8 @@ func main() {
 			subTree, err := tree.Tree(subdirectoryPath)
 			CheckIfError(err)
 
-			os.Mkdir(savePath, os.ModePerm)
+			err = os.Mkdir(savePath, os.ModePerm)
+			CheckIfError(err)
 
 			err = SaveTree(subTree, savePath)
 			CheckIfError(err)
