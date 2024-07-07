@@ -4,6 +4,8 @@
 [![Go Report Card][goreportcard_badge]][goreportcard_link]
 [![goreleaser][goreleaser_badge]][goreleaser_link]
 
+gitgrab is a declarative, simple, fast CLI tool for downloading a folder from a git repo
+
 ## Installation
 
 Download from latest release here : https://github.com/sachinsmc/gitgrab/releases/latest or 
