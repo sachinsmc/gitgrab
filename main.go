@@ -15,7 +15,7 @@ import (
 func main() {
 	app := &cli.App{
 		Name:  "gitgrab",
-		Usage: "grab folder/file from git",
+		Usage: "grab folder from git",
 		Action: func(ctx *cli.Context) error {
 			fmt.Println("Gitgrab : ", ctx.Args().Get(0))
 
