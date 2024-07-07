@@ -49,7 +49,7 @@ func CheckIfError(err error) {
 	}
 	_, filename, line, _ := runtime.Caller(1)
 
-	fmt.Printf("\x1b[31;1m%s\x1b[0m\n", fmt.Sprintf("[error] %s:%d %v", filename, line, err))
+	fmt.Printf("\x1b[31;1m%s\x1b[0m\n", fmt.Sprintf("Please provide a valid folder url [error] %s:%d %v", filename, line, err))
 	os.Exit(1)
 }
 

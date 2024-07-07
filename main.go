@@ -20,7 +20,10 @@ func main() {
 			fmt.Println("Gitgrab : ", ctx.Args().Get(0))
 
 			URL := ctx.Args().Get(0)
-			// URL := "https://github.com/go-git/go-git/blob/master/config/modules.go"
+			if URL == "" {
+				fmt.Println("Error Please provide a folder URL \n example usage : gitgrab https://github.com/go-git/go-git/blob/master/config")
+				return nil
+			}
 
 			repoURL, subdirectoryPath, refName := splitURL(URL)
 			savePath := "./" + subdirectoryPath
