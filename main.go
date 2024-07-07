@@ -5,10 +5,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/storage/memory"
-
 	"github.com/urfave/cli/v2"
 )
 
@@ -25,40 +21,9 @@ func main() {
 				return nil
 			}
 
-			repoURL, subdirectoryPath, refName := splitURL(URL)
-			savePath := "./" + subdirectoryPath
-
-			storage := memory.NewStorage()
-
-			repo, err := git.Clone(storage, nil, &git.CloneOptions{
-				URL:           repoURL,
-				SingleBranch:  true,
-				ReferenceName: plumbing.ReferenceName(refName),
-				Depth:         1, // Shallow clone with depth 1.
-			})
-
+			err := DownloadFolder(URL)
 			CheckIfError(err)
-
-			ref, err := repo.Head()
-			CheckIfError(err)
-
-			commit, err := repo.CommitObject(ref.Hash())
-			CheckIfError(err)
-
-			tree, err := commit.Tree()
-			CheckIfError(err)
-
-			subTree, err := tree.Tree(subdirectoryPath)
-			CheckIfError(err)
-
-			err = os.Mkdir(savePath, os.ModePerm)
-			CheckIfError(err)
-
-			err = SaveTree(subTree, savePath)
-			CheckIfError(err)
-
-			fmt.Println("Subdirectory saved : ", savePath)
-			return nil
+			return err
 		},
 	}
 

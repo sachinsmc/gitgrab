@@ -8,8 +8,11 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/filemode"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/storage/memory"
 )
 
 func SaveTree(tree *object.Tree, savePath string) error {
@@ -51,6 +54,43 @@ func CheckIfError(err error) {
 
 	fmt.Printf("\x1b[31;1m%s\x1b[0m\n", fmt.Sprintf("Please provide a valid folder url [error] %s:%d %v", filename, line, err))
 	os.Exit(1)
+}
+
+func DownloadFolder(URL string) error {
+	repoURL, subdirectoryPath, refName := splitURL(URL)
+	savePath := "./" + subdirectoryPath
+
+	storage := memory.NewStorage()
+
+	repo, err := git.Clone(storage, nil, &git.CloneOptions{
+		URL:           repoURL,
+		SingleBranch:  true,
+		ReferenceName: plumbing.ReferenceName(refName),
+		Depth:         1, // Shallow clone with depth 1.
+	})
+
+	CheckIfError(err)
+
+	ref, err := repo.Head()
+	CheckIfError(err)
+
+	commit, err := repo.CommitObject(ref.Hash())
+	CheckIfError(err)
+
+	tree, err := commit.Tree()
+	CheckIfError(err)
+
+	subTree, err := tree.Tree(subdirectoryPath)
+	CheckIfError(err)
+
+	err = os.Mkdir(savePath, os.ModePerm)
+	CheckIfError(err)
+
+	err = SaveTree(subTree, savePath)
+	CheckIfError(err)
+
+	fmt.Println("Subdirectory saved : ", savePath)
+	return nil
 }
 
 func splitURL(URL string) (string, string, string) {
